@@ -1,12 +1,11 @@
+"""Run the game Asteroids"""
+
 import pygame
 import random
 from ship import Ship
 from asteroid import Asteroid
 from bullet import Bullet
 vec2 = pygame.math.Vector2
-
-pygame.init()
-pygame.font.init()
 
 SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 700
@@ -17,26 +16,25 @@ SCOREBOARD_POS = (10, 10)
 BESTSCORE_POS = (SCOREBOARD_POS[0], SCOREBOARD_POS[1] + SCORE_FONT_SIZE)
 PAUSE_CENTER = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3)
 
+pygame.init()
+pygame.font.init()
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Asteroids")
 background = pygame.Surface(screen.get_size())
 background = background.convert()
 scorefont = pygame.font.Font("Hyperspace Bold Italic.otf", SCORE_FONT_SIZE)
+score = 0
+maxscore = 0
 currentscoreboard = None
 bestscoreboard = None
 ship = None
-score = 0
-maxscore = 0
 bullets = []
 asteroids = []
 
 
-def spawnBullet(pos, vel):
-    bullets.append(Bullet(screen, pos, vel))
-
-
 def checkCollisions():
+    """Handle collisions between entities"""
     # Return true if game is still active, false if player has died
     global asteroids
     global ship
@@ -62,14 +60,16 @@ def checkCollisions():
 
 
 def init():
-    screen.blit(background, (0, 0))
+    """Initialize the screen and reset entities"""
+    screen.blit(background, (0, 0))  # Erase screen
     pygame.display.update()
     global ship, asteroids, bullets, score
     if ship:
         ship.reset(vec2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
     else:
         ship = Ship(screen, vec2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
-        ship.setSpawnBullet(spawnBullet)
+        ship.setSpawnBullet(
+            lambda pos, vel: bullets.append(Bullet(screen, pos, vel)))
     bullets = []
     score = 0
     asteroids = []
@@ -78,6 +78,7 @@ def init():
 
 
 def pause():
+    """Pause the game"""
     global background, screen
     # Create paused screen display
     paused_font = pygame.font.Font("Hyperspace Bold Italic.otf", 100)
@@ -99,7 +100,7 @@ def pause():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 paused = False
-                return True
+                quit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_p:
                     paused = False
@@ -112,7 +113,14 @@ def pause():
                     return False
 
 
+def quit():
+    """Quit the program entirely"""
+    pygame.font.quit()
+    pygame.quit()
+
+
 def main():
+    """Run the main game loop of Asteroids"""
     global ship, asteroids, bullets, currentscoreboard, bestscoreboard
     running = True
     clock = pygame.time.Clock()
@@ -121,7 +129,7 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                return True
+                quit()
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
                 if pause():  # Returns true if the game is quit
                     return True
@@ -182,10 +190,7 @@ def main():
     return False
 
 
-quit = False
-while not quit:
+while True:
     init()
-    quit = main()
-
-pygame.font.quit()
-pygame.quit()
+    main()
+quit()
