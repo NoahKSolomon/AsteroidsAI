@@ -13,16 +13,18 @@ SCREEN_HEIGHT = 700
 AST_SPEED_MAX = 25
 AST_SPEED_MIN = 10
 MIN_ASTEROIDS = 5
-FONT_SIZE = 20
+SCORE_FONT_SIZE = 20
 FONT_COLOR = (255, 255, 255)
 SCOREBOARD_POS = (10, 10)
-BESTSCORE_POS = (SCOREBOARD_POS[0], SCOREBOARD_POS[1] + FONT_SIZE)
+BESTSCORE_POS = (SCOREBOARD_POS[0], SCOREBOARD_POS[1] + SCORE_FONT_SIZE)
+PAUSE_CENTER = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3)
+
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Asteroids")
 background = pygame.Surface(screen.get_size())
 background = background.convert()
-scorefont = pygame.font.Font(None, FONT_SIZE)
+scorefont = pygame.font.Font("Hyperspace Bold Italic.otf", SCORE_FONT_SIZE)
 currentscoreboard = None
 bestscoreboard = None
 ship = None
@@ -105,6 +107,41 @@ def init():
         asteroids.append(genAsteroid())
 
 
+def pause():
+    global background, screen
+    # Create paused screen display
+    paused_font = pygame.font.Font("Hyperspace Bold Italic.otf", 100)
+    continue_font = pygame.font.Font("Hyperspace Bold Italic.otf", 25)
+    paused_surface = paused_font.render("Paused", False, FONT_COLOR)
+    continue_surface = continue_font.render(
+        "Press P to Continue", False, FONT_COLOR)
+    p_size = paused_font.size("Paused")
+    c_size = continue_font.size("Press P to Continue")
+    p_pos = (PAUSE_CENTER[0] - (p_size[0] / 2),
+             PAUSE_CENTER[1] - (p_size[1] / 2))
+    c_pos = (PAUSE_CENTER[0] - (c_size[0] / 2),
+             PAUSE_CENTER[1] + (p_size[1] / 2) + 10)
+    # Draw pause display to screen
+    pygame.display.update([screen.blit(paused_surface, p_pos),
+                           screen.blit(continue_surface, c_pos)])
+    paused = True
+    while paused:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                paused = False
+                return True
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    paused = False
+                    # Erase paused display from screen
+                    pygame.display.update([
+                        screen.blit(background, p_pos,
+                                    pygame.Rect(p_pos, p_size)),
+                        screen.blit(background, c_pos,
+                                    pygame.Rect(c_pos, c_size))])
+                    return False
+
+
 def main():
     global ship, asteroids, bullets, currentscoreboard, bestscoreboard
     running = True
@@ -115,6 +152,9 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
                 return True
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+                if pause():  # Returns true if the game is quit
+                    return True
             else:
                 ship.handle_event(event)
 
