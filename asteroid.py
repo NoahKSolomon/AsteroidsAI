@@ -5,6 +5,8 @@ vec2 = pygame.math.Vector2
 DEBUG = False
 SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 700
+AST_SPEED_MAX = 25
+AST_SPEED_MIN = 10
 
 
 class Asteroid:
@@ -93,3 +95,30 @@ class Asteroid:
 
     def getbounds(self):
         return self.rect
+
+    @classmethod
+    def genAsteroid(cls, surface):
+        # Create a randomized asteroid
+        side = random.randrange(4)  # Choose what side to start on
+        x = random.randrange(SCREEN_WIDTH)  # Choose random position on screen
+        y = random.randrange(SCREEN_HEIGHT)
+        level = random.randrange(len(cls.radii))  # Choose radius level
+        div_by = level + 1  # Scale velocity by radius of asteroid
+        vel = None
+        if side == 0:  # Top
+            y = -cls.radii[level]
+            vel = (random.randrange(-AST_SPEED_MAX // div_by, AST_SPEED_MAX // div_by),
+                   random.randrange(AST_SPEED_MIN // div_by, AST_SPEED_MAX // div_by))
+        elif side == 1:  # Right
+            x = SCREEN_WIDTH + cls.radii[level]
+            vel = (-random.randrange(AST_SPEED_MIN // div_by, AST_SPEED_MAX // div_by),
+                   random.randrange(-AST_SPEED_MAX // div_by, AST_SPEED_MAX // div_by))
+        elif side == 2:  # Bottom
+            y = SCREEN_HEIGHT + cls.radii[level]
+            vel = (random.randrange(-AST_SPEED_MAX // div_by, AST_SPEED_MAX // div_by), -
+                   random.randrange(AST_SPEED_MIN // div_by, AST_SPEED_MAX // div_by))
+        else:  # Left
+            x = -cls.radii[level]
+            vel = (random.randrange(AST_SPEED_MIN // div_by, AST_SPEED_MAX // div_by),
+                   random.randrange(-AST_SPEED_MAX // div_by, AST_SPEED_MAX // div_by))
+        return cls(surface, vec2(x, y), vec2(vel), level)

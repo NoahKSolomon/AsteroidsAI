@@ -10,8 +10,6 @@ pygame.font.init()
 
 SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 700
-AST_SPEED_MAX = 25
-AST_SPEED_MIN = 10
 MIN_ASTEROIDS = 5
 SCORE_FONT_SIZE = 20
 FONT_COLOR = (255, 255, 255)
@@ -32,34 +30,6 @@ score = 0
 maxscore = 0
 bullets = []
 asteroids = []
-
-
-def genAsteroid():
-    # Create a randomized asteroid
-    side = random.randrange(4)  # Choose what side to start on
-    x = random.randrange(SCREEN_WIDTH)
-    y = random.randrange(SCREEN_HEIGHT)
-    level = random.randrange(len(Asteroid.radii))
-    div_by = level + 1
-    vel = None
-    if side == 0:  # Top
-        y = -Asteroid.radii[level]
-        vel = (random.randrange(-AST_SPEED_MAX // div_by, AST_SPEED_MAX // div_by),
-               random.randrange(AST_SPEED_MIN // div_by, AST_SPEED_MAX // div_by))
-    elif side == 1:  # Right
-        x = SCREEN_WIDTH + Asteroid.radii[level]
-        vel = (-random.randrange(AST_SPEED_MIN // div_by, AST_SPEED_MAX // div_by),
-               random.randrange(-AST_SPEED_MAX // div_by, AST_SPEED_MAX // div_by))
-    elif side == 2:  # Bottom
-        y = SCREEN_HEIGHT + Asteroid.radii[level]
-        vel = (random.randrange(-AST_SPEED_MAX // div_by, AST_SPEED_MAX // div_by), -
-               random.randrange(AST_SPEED_MIN // div_by, AST_SPEED_MAX // div_by))
-    else:  # Left
-        x = -Asteroid.radii[level]
-        vel = (random.randrange(AST_SPEED_MIN // div_by, AST_SPEED_MAX // div_by),
-               random.randrange(-AST_SPEED_MAX // div_by, AST_SPEED_MAX // div_by))
-    return Asteroid(screen, pygame.math.Vector2(x, y),
-                    pygame.math.Vector2(vel), level)
 
 
 def spawnBullet(pos, vel):
@@ -104,7 +74,7 @@ def init():
     score = 0
     asteroids = []
     for i in range(MIN_ASTEROIDS):
-        asteroids.append(genAsteroid())
+        asteroids.append(Asteroid.genAsteroid(screen))
 
 
 def pause():
@@ -192,7 +162,7 @@ def main():
 
         if len(asteroids) < MIN_ASTEROIDS:
             for i in range(MIN_ASTEROIDS - len(asteroids)):
-                asteroids.append(genAsteroid())
+                asteroids.append(Asteroid.genAsteroid(screen))
 
         # Show entities
         dirty_rects.append(ship.show())
