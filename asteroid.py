@@ -43,8 +43,8 @@ class Asteroid:
                 ((random.random() * 2 * BUMP_PERCENTAGE) - BUMP_PERCENTAGE)
             vert_vec = vec2(0, 1)
             vert_vec.scale_to_length(new_radius)  # Scale to new radius
-            vert_vec.rotate(angle)  # Rotate to proper position
-            vert_vec += self.pos  # Translate to screen position
+            vert_vec = vert_vec.rotate(angle)  # Rotate to proper position
+            vert_vec = self.pos + vert_vec  # Translate to screen position
             x_min = vert_vec.x if x_min == None or vert_vec.x < x_min else x_min
             x_max = vert_vec.x if x_max == None or vert_vec.x > x_max else x_max
             y_min = vert_vec.y if y_min == None or vert_vec.y < y_min else y_min
@@ -63,20 +63,31 @@ class Asteroid:
         dt -- the delta time to update with
         """
         self.pos += self.vel * dt
-        # Wrap screen
-        if not self.reenter and self.pos.x + self.radius < 0:
-            self.reenter = True
-            self.pos.x = SCREEN_WIDTH + self.radius
-        elif not self.reenter and self.pos.x - self.radius > SCREEN_WIDTH:
-            self.reenter = True
-            self.pos.x = 0 - self.radius
+        for vert in self.verts:
+            vert += self.vel * dt
 
-        if not self.reenter and self.pos.y + self.radius < 0:
+        # Wrap screen
+        if not self.reenter and self.rect.right < 0:
             self.reenter = True
-            self.pos.y = SCREEN_HEIGHT + self.radius
-        elif not self.reenter and self.pos.y - self.radius > SCREEN_HEIGHT:
+            self.pos.x += SCREEN_WIDTH + self.rect.width
+            for vert in self.verts:
+                vert.x += SCREEN_WIDTH + self.rect.width
+        elif not self.reenter and self.rect.left > SCREEN_WIDTH:
             self.reenter = True
-            self.pos.y = 0 - self.radius
+            self.pos.x -= SCREEN_WIDTH + self.rect.width
+            for vert in self.verts:
+                vert.x -= SCREEN_WIDTH + self.rect.width
+
+        if not self.reenter and self.rect.top < 0:
+            self.reenter = True
+            self.pos.y += SCREEN_HEIGHT + self.rect.height
+            for vert in self.verts:
+                vert.y += SCREEN_HEIGHT + self.rect.height
+        elif not self.reenter and self.rect.bottom > SCREEN_HEIGHT:
+            self.reenter = True
+            self.pos.y -= SCREEN_HEIGHT + self.rect.height
+            for vert in self.verts:
+                vert.y -= SCREEN_HEIGHT + self.rect.height
 
         self.rect.center = self.pos
 
@@ -90,10 +101,12 @@ class Asteroid:
     def show(self):
         """Draw the Asteroid to the given surface based on Asteroid state"""
         int_pos = (int(self.pos.x), int(self.pos.y))
-        self.rect = pygame.draw.circle(self.surface, Asteroid.color,
-                                       int_pos, self.radius, 1)
-        self.rect.w += 1  # Needed to ensure edges captured as well
-        self.rect.h += 1
+        self.rect = pygame.draw.polygon(
+            self.surface, Asteroid.color, self.verts, 1)
+        # self.rect = pygame.draw.circle(self.surface, Asteroid.color,
+        # int_pos, self.radius, 1)
+        # self.rect.w += 1  # Needed to ensure edges captured as well
+        # self.rect.h += 1
         return self.rect
 
     def split(self):
@@ -105,14 +118,17 @@ class Asteroid:
         num_to_create = self.radius // new_radius
         spawn_angle = random.randrange(
             Asteroid.split_angle_min, Asteroid.split_angle_max)
-        base_vec = vec2(self.vel).rotate(spawn_angle / 2)
+        base_vec = None
+        if self.vel.xy != (0, 0):
+            base_vec = vec2(self.vel).rotate(spawn_angle / 2)
         to_ret = []
         new_vel_mag = (len(Asteroid.radii) - new_level)*(self.radius * self.vel.magnitude()) / \
             (num_to_create * new_radius)
         for i in range(num_to_create):
             spawn_vel = vec2(base_vec).rotate(-i*(spawn_angle //
-                                                  num_to_create))
-            spawn_vel.scale_to_length(new_vel_mag)
+                                                  num_to_create)) if base_vec != None else vec2(0, 0)
+            if spawn_vel.xy != (0, 0):
+                spawn_vel.scale_to_length(new_vel_mag)
             to_ret.append(
                 Asteroid(self.surface, self.pos, spawn_vel, new_level))
         return to_ret
