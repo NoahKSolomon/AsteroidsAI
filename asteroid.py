@@ -6,6 +6,8 @@ SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 700
 AST_SPEED_MAX = 25
 AST_SPEED_MIN = 10
+BUMP_PERCENTAGE = 0.1  # What percentage of the radii the random bumps can be
+NUM_VERTS = 15
 
 
 class Asteroid:
@@ -32,13 +34,27 @@ class Asteroid:
             self.vel.scale_to_length(Asteroid.vel_lim)
         self.level = level  # Which level asteroid this is
         self.radius = Asteroid.radii[level]
-        self.rect = pygame.Rect(self.pos.x, self.pos.y,
-                                self.radius * 2 + 1, self.radius * 2 + 1)
+        self.verts = []
+        angle = 0
+        angle_inc = 360 / NUM_VERTS
+        x_min, x_max, y_min, y_max = None, None, None, None  # Track for rect
+        for i in range(NUM_VERTS):
+            new_radius = self.radius + self.radius * \
+                ((random.random() * 2 * BUMP_PERCENTAGE) - BUMP_PERCENTAGE)
+            vert_vec = vec2(0, 1)
+            vert_vec.scale_to_length(new_radius)  # Scale to new radius
+            vert_vec.rotate(angle)  # Rotate to proper position
+            vert_vec += self.pos  # Translate to screen position
+            x_min = vert_vec.x if x_min == None or vert_vec.x < x_min else x_min
+            x_max = vert_vec.x if x_max == None or vert_vec.x > x_max else x_max
+            y_min = vert_vec.y if y_min == None or vert_vec.y < y_min else y_min
+            y_max = vert_vec.y if y_max == None or vert_vec.y > y_max else y_max
+            self.verts.append(vert_vec)
+            angle += angle_inc
+        self.rect = pygame.Rect(x_min, y_min, x_max - x_min, y_max - y_min)
         self.reenter = \
-            self.pos.x + self.radius < 0 or \
-            self.pos.x - self.radius > SCREEN_WIDTH or \
-            self.pos.y + self.radius < 0 or \
-            self.pos.y - self.radius > SCREEN_HEIGHT
+            x_max < 0 or x_min > SCREEN_WIDTH or \
+            y_max < 0 or y_min > SCREEN_HEIGHT
 
     def update(self, dt):
         """Update state of Asteroid
