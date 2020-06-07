@@ -18,6 +18,14 @@ class Asteroid:
     vel_lim = 50
 
     def __init__(self, surface, pos, vel, level):
+        """Create an Asteroid object
+
+        Arguments:
+        surface -- pygame.Surface to draw the Asteroid on
+        pos -- initial position of Asteroid
+        vel -- inital velocity of Asteroid
+        level -- which level of radius Asteroid is
+        """
         self.surface = surface
         self.pos = vec2(pos)
         self.vel = vec2(vel)
@@ -34,6 +42,11 @@ class Asteroid:
             self.pos.y - self.radius > SCREEN_HEIGHT
 
     def update(self, dt):
+        """Update state of Asteroid
+
+        Arguments:
+        dt -- the delta time to update with
+        """
         self.pos += self.vel * dt
         # Wrap screen
         if not self.reenter and self.pos.x + self.radius < 0:
@@ -60,6 +73,7 @@ class Asteroid:
                 self.pos.y - self.radius <= SCREEN_HEIGHT
 
     def show(self):
+        """Draw the Asteroid to the given surface based on Asteroid state"""
         int_pos = (int(self.pos.x), int(self.pos.y))
         self.rect = pygame.draw.circle(self.surface, Asteroid.color,
                                        int_pos, self.radius, 1)
@@ -71,6 +85,7 @@ class Asteroid:
         return self.rect
 
     def split(self):
+        """Split Asteroid into smaller Asteroids and return a list"""
         new_level = self.level - 1
         if new_level < 0:
             return []
@@ -91,14 +106,20 @@ class Asteroid:
         return to_ret
 
     def getupperleft(self):
+        """Get the upper left corner of the bouning rectangle of Asteroid"""
         return (self.rect.x, self.rect.y)
 
     def getbounds(self):
-        return self.rect
+        """Get the bounding rectangle of Asteroid"""
+        return pygame.Rect(self.rect)
 
     @classmethod
     def genAsteroid(cls, surface):
-        # Create a randomized asteroid
+        """Create a randomized asteroid
+
+        Arguments:
+        surface -- pygame.Surface to draw asteroid to
+        """
         side = random.randrange(4)  # Choose what side to start on
         x = random.randrange(SCREEN_WIDTH)  # Choose random position on screen
         y = random.randrange(SCREEN_HEIGHT)

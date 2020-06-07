@@ -4,23 +4,38 @@ import pygame
 class Controller:
 
     def __init__(self, object):
+        """Create Controller object
+
+        Arguments:
+        object -- object to control from this controller
+        """
         self.object = object  # The object to be controlled
 
     def handle_event(self, event):
+        """Handle event from pygame
+
+        This method is intended to ve overriden by child class
+        """
         pass  # Do nothing on events
 
 
 class Player(Controller):
 
     def __init__(self, object):
+        """Create a Player Controller object
+
+        Arguments:
+        object -- object to control from Player Controller
+        """
         Controller.__init__(self, object)
-        self.w = False
+        self.w = False  # State of which buttons are pressed
         self.a = False
         self.s = False
         self.d = False
         self.space = False
 
     def reset(self):
+        """Reset all button pressed states to unpressed"""
         self.w = False
         self.a = False
         self.s = False
@@ -28,6 +43,11 @@ class Player(Controller):
         self.space = False
 
     def handle_event(self, event):
+        """Handle event from pygame
+
+        Arguments:
+        event -- pygame event to handle
+        """
         # Handle one event at a time
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_w:

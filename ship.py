@@ -21,6 +21,13 @@ class Ship:
     shots_per_sec = 3
 
     def __init__(self, surface, pos, dir=(1, 0)):
+        """Create a Ship object
+
+        Arguments:
+        surface -- pygame.Surface to draw Ship to
+        pos -- Initial position of Ship
+        dir -- Initial direction Ship is facing. Default is to right
+        """
         # Draw state
         self.surface = surface  # surface to draw ship to
         # Movement state
@@ -46,6 +53,11 @@ class Ship:
             self.pos.y - Ship.size > SCREEN_HEIGHT
 
     def update(self, dt):
+        """Update state of Ship
+
+        Arguments:
+        dt -- Delta time to modify state calculations
+        """
         # Update direction
         angle = Ship.rot_vel if self.left else 0
         angle = angle - Ship.rot_vel if self.right else angle
@@ -96,7 +108,7 @@ class Ship:
                 self.last_shot_time = cur_time
 
     def show(self):
-        # Draw the ship to the screen
+        """Draw Ship to surface"""
         # Make vectors from center of ship to verts and rotate them through self.angle
         vec_1 = self.dir * (Ship.size / 2)
         vec_2 = vec2(vec_1).rotate(360 / 2.75)
@@ -114,6 +126,11 @@ class Ship:
         return self.rect
 
     def accelerate(self, accel=True):
+        """Cause Ship to de/accelerate in direction Ship is facing
+
+        Arguments:
+        accel -- Whether to accelerate in positive or negative fashion
+        """
         # Set the acceleration of the ship
         if accel:
             self.acc += Ship.acc_mag
@@ -121,6 +138,12 @@ class Ship:
             self.acc -= Ship.acc_mag
 
     def turn(self, direction, enable=True):
+        """Turn the Ship in a certain direction
+
+        Arguments:
+        direction -- String of which direction to turn
+        enable -- Whether to begin or end the turning action
+        """
         # Set the rotational velocity of the ship
         if direction == "right":
             self.right = enable
@@ -128,15 +151,31 @@ class Ship:
             self.left = enable
 
     def shoot(self, start=True):
+        """Shoot a Bullet from Ship"""
         self.shooting = start
 
     def handle_event(self, event):
+        """Handle an event through Controller
+
+        Arguments:
+        event -- pygame.event to handle
+        """
         self.controller.handle_event(event)
 
     def setSpawnBullet(self, func):
+        """Set spawnBullet callback
+
+        Arguments:
+        func -- Callback to set to
+        """
         self.spawnBullet = func
 
     def reset(self, resetPos):
+        """Reset Ship to initial state
+
+        Arguments:
+        resetPos -- Position to reset Ship position to
+        """
         # Reset movement state
         self.pos = vec2(resetPos)
         self.vel = vec2((0, 0))  # velocity of ship
@@ -157,7 +196,9 @@ class Ship:
             self.pos.y - Ship.size > SCREEN_HEIGHT
 
     def getupperleft(self):
+        """Get the upper left corner of bounding rectangle of Ship"""
         return (self.rect.x, self.rect.y)
 
     def getbounds(self):
+        """Get bounding rectangle of Ship"""
         return pygame.Rect(self.rect)
