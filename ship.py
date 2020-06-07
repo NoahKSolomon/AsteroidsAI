@@ -4,8 +4,6 @@ import time
 from controller import Player
 vec2 = pygame.math.Vector2
 
-# Ship variables
-DEBUG = False
 SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 700
 
@@ -45,6 +43,8 @@ class Ship:
         self.shooting = False
         self.last_shot_time = -1
         self.spawnBullet = None  # Callback to spawn bullet
+        # Dead state
+        self.dead = False
         # Wrapping state
         self.reenter = \
             self.pos.x + Ship.size < 0 or \
@@ -117,12 +117,6 @@ class Ship:
         vecs = [vec_1, vec_2, vec_3]
         draw_verts = [self.pos + vec for vec in vecs]
         self.rect = pygame.draw.polygon(self.surface, Ship.color, draw_verts, 1)
-
-        if DEBUG:
-            pygame.draw.line(self.surface, (255, 0, 0),  # Draw nose vector
-                             self.pos, self.pos + 1.5 * vec_1)
-            pygame.draw.line(self.surface, (0, 255, 0),  # Draw velocity vector
-                             self.pos, self.pos + 1.5 * self.vel)
         return self.rect
 
     def accelerate(self, accel=True):
@@ -194,6 +188,14 @@ class Ship:
             self.pos.x - Ship.size > SCREEN_WIDTH or \
             self.pos.y + Ship.size < 0 or \
             self.pos.y - Ship.size > SCREEN_HEIGHT
+
+    def setDead(self, val):
+        """Set the dead state of the Ship to 'val'"""
+        self.dead = val
+
+    def isDead(self):
+        """Return if this Ship is dead"""
+        return self.dead
 
     def getupperleft(self):
         """Get the upper left corner of bounding rectangle of Ship"""

@@ -5,16 +5,23 @@ import random
 from ship import Ship
 from asteroid import Asteroid
 from bullet import Bullet
+from gamestate import GameState
 vec2 = pygame.math.Vector2
 
 SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 700
-MIN_ASTEROIDS = 5
+MIN_ASTEROIDS = 7
+DIFFICULTY_INCREASE_THRESHOLD = 15
+ASTEROID_DIFFICULTY_INCREMENT = 3
 SCORE_FONT_SIZE = 20
 FONT_COLOR = (255, 255, 255)
 SCOREBOARD_POS = (10, 10)
 BESTSCORE_POS = (SCOREBOARD_POS[0], SCOREBOARD_POS[1] + SCORE_FONT_SIZE)
 PAUSE_CENTER = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3)
+TITLE_CENTER = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3)
+TITLE_SIZE = 150
+SUBTITLE_CENTER = (TITLE_CENTER[0], TITLE_CENTER[1] + TITLE_SIZE)
+SUBTITLE_SIZE = 50
 
 pygame.init()
 pygame.font.init()
@@ -26,24 +33,24 @@ background = background.convert()
 scorefont = pygame.font.Font("Hyperspace Bold Italic.otf", SCORE_FONT_SIZE)
 score = 0
 maxscore = 0
+asteroid_spawn_count = MIN_ASTEROIDS
 currentscoreboard = None
 bestscoreboard = None
 ship = None
 bullets = []
 asteroids = []
+state = GameState.MAIN_MENU
 
 
 def checkCollisions():
     """Handle collisions between entities"""
     # Return true if game is still active, false if player has died
-    global asteroids
-    global ship
-    global bullets
-    global score, maxscore
+    global asteroids, ship, bullets, score, maxscore, asteroid_spawn_count
     to_split = []
     for ast in asteroids:
         # Check ship collisions
         if ship.pos.distance_to(ast.pos) < (Ship.size / 2) + ast.radius:
+            ship.setDead(True)
             return False
         for bullet in bullets:
             if bullet.pos.distance_to(ast.pos) < Bullet.radius + ast.radius:
@@ -54,16 +61,18 @@ def checkCollisions():
         if ast in asteroids:
             asteroids.remove(ast)
             score += 1
+            if score % DIFFICULTY_INCREASE_THRESHOLD == 0:
+                asteroid_spawn_count += ASTEROID_DIFFICULTY_INCREMENT
             maxscore = score if score > maxscore else maxscore
             asteroids += ast.split()
     return True
 
 
-def init():
-    """Initialize the screen and reset entities"""
+def reset():
+    """Reset the screen and reset entities"""
     screen.blit(background, (0, 0))  # Erase screen
     pygame.display.update()
-    global ship, asteroids, bullets, score
+    global ship, asteroids, bullets, score, asteroid_spawn_count
     if ship:
         ship.reset(vec2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
     else:
@@ -73,13 +82,50 @@ def init():
     bullets = []
     score = 0
     asteroids = []
-    for i in range(MIN_ASTEROIDS):
+    asteroid_spawn_count = MIN_ASTEROIDS
+    for i in range(asteroid_spawn_count):
         asteroids.append(Asteroid.genAsteroid(screen))
+
+
+def mainmenu():
+    global screen, background, state
+    # Erase screen
+    screen.blit(background, (0, 0))
+
+    title_font = pygame.font.Font("Hyperspace Bold Italic.otf", TITLE_SIZE)
+    subtitle_font = pygame.font.Font(
+        "Hyperspace Bold Italic.otf", SUBTITLE_SIZE)
+
+    title_surface = title_font.render("ASTEROIDS", False, FONT_COLOR)
+    subtitle_surface = subtitle_font.render(
+        "Press any key to play", False, FONT_COLOR)
+
+    title_size = title_font.size("ASTEROIDS")
+    subtitle_size = subtitle_font.size("Press any key to play")
+
+    title_pos = (TITLE_CENTER[0] - (title_size[0] / 2),
+                 TITLE_CENTER[1] - (title_size[1] / 2))
+    subtitle_pos = (TITLE_CENTER[0] - (subtitle_size[0] / 2),
+                    TITLE_CENTER[1] + (title_size[1] / 2))
+
+    screen.blit(title_surface, title_pos)
+    screen.blit(subtitle_surface, subtitle_pos)
+    pygame.display.update()
+
+    while True:
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                state = GameState.QUIT
+                return
+            if event.type == pygame.KEYUP:  # Start game on keyup
+                state = GameState.PLAY
+                return
 
 
 def pause():
     """Pause the game"""
-    global background, screen
+    global background, screen, state
     # Create paused screen display
     paused_font = pygame.font.Font("Hyperspace Bold Italic.otf", 100)
     continue_font = pygame.font.Font("Hyperspace Bold Italic.otf", 25)
@@ -100,17 +146,18 @@ def pause():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 paused = False
-                quit()
+                state = GameState.QUIT
+                return
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_p:
-                    paused = False
+                    state = GameState.PLAY
                     # Erase paused display from screen
                     pygame.display.update([
                         screen.blit(background, p_pos,
                                     pygame.Rect(p_pos, p_size)),
                         screen.blit(background, c_pos,
                                     pygame.Rect(c_pos, c_size))])
-                    return False
+                    return
 
 
 def quit():
@@ -119,9 +166,9 @@ def quit():
     pygame.quit()
 
 
-def main():
+def play():
     """Run the main game loop of Asteroids"""
-    global ship, asteroids, bullets, currentscoreboard, bestscoreboard
+    global ship, asteroids, bullets, currentscoreboard, bestscoreboard, state
     running = True
     clock = pygame.time.Clock()
     while running:
@@ -129,10 +176,11 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                quit()
+                state = GameState.QUIT
+                return
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
-                if pause():  # Returns true if the game is quit
-                    return True
+                state = GameState.PAUSE
+                return
             else:
                 ship.handle_event(event)
 
@@ -168,8 +216,9 @@ def main():
         if running:  # running may be set to false in quit event
             running = checkCollisions()
 
-        if len(asteroids) < MIN_ASTEROIDS:
-            for i in range(MIN_ASTEROIDS - len(asteroids)):
+        # Spawn more Asteroids if too few exist
+        if len(asteroids) < asteroid_spawn_count:
+            for i in range(asteroid_spawn_count - len(asteroids)):
                 asteroids.append(Asteroid.genAsteroid(screen))
 
         # Show entities
@@ -191,6 +240,14 @@ def main():
 
 
 while True:
-    init()
-    main()
-quit()
+    if state is GameState.MAIN_MENU:
+        mainmenu()
+    elif state is GameState.PLAY:
+        if ship == None or ship.isDead():
+            reset()
+        play()
+    elif state is GameState.PAUSE:
+        pause()
+    elif state is GameState.QUIT:
+        quit()
+        break

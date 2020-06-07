@@ -1,7 +1,6 @@
 import pygame
 vec2 = pygame.math.Vector2
 
-DEBUG = False
 SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 700
 
@@ -31,9 +30,6 @@ class Bullet:
         int_pos = (int(self.pos.x), int(self.pos.y))
         self.rect = pygame.draw.circle(self.surface, (255, 255, 255),
                                        int_pos, Bullet.radius)
-        if DEBUG:
-            pygame.draw.line(self.surface, (0, 255, 0),
-                             int_pos, int_pos + Bullet.vel * self.dir)
         return self.rect
 
     def update(self, dt):

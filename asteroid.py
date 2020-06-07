@@ -2,7 +2,6 @@ import pygame
 import random
 vec2 = pygame.math.Vector2
 
-DEBUG = False
 SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 700
 AST_SPEED_MAX = 25
@@ -77,11 +76,8 @@ class Asteroid:
         int_pos = (int(self.pos.x), int(self.pos.y))
         self.rect = pygame.draw.circle(self.surface, Asteroid.color,
                                        int_pos, self.radius, 1)
-        self.rect.w += 1
+        self.rect.w += 1  # Needed to ensure edges captured as well
         self.rect.h += 1
-        if DEBUG:
-            pygame.draw.line(self.surface, (0, 255, 0),
-                             self.pos, self.pos + self.vel)
         return self.rect
 
     def split(self):
