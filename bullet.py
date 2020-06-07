@@ -9,7 +9,7 @@ class Bullet:
 
     radius = 2
     color = (255, 255, 255)
-    vel = 0.5
+    vel = 125
 
     def __init__(self, surface, pos, dir):
         """Create a Bullet object

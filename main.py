@@ -10,6 +10,7 @@ vec2 = pygame.math.Vector2
 
 SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 700
+FPS_LIM = 60
 MIN_ASTEROIDS = 7
 DIFFICULTY_INCREASE_THRESHOLD = 15
 ASTEROID_DIFFICULTY_INCREMENT = 3
@@ -88,17 +89,22 @@ def reset():
 
 
 def mainmenu():
+    """Display the main menu of the game"""
     global screen, background, state
     # Erase screen
     screen.blit(background, (0, 0))
 
+    # Create title and subtitle font
     title_font = pygame.font.Font("Hyperspace Bold Italic.otf", TITLE_SIZE)
     subtitle_font = pygame.font.Font(
         "Hyperspace Bold Italic.otf", SUBTITLE_SIZE)
 
-    title_surface = title_font.render("ASTEROIDS", False, FONT_COLOR)
+    title_color = pygame.Color(255, 255, 255, 1)
+    title_surface = title_font.render("ASTEROIDS", False, title_color)
     subtitle_surface = subtitle_font.render(
         "Press any key to play", False, FONT_COLOR)
+    title_surface.convert()
+    subtitle_surface.convert()
 
     title_size = title_font.size("ASTEROIDS")
     subtitle_size = subtitle_font.size("Press any key to play")
@@ -108,19 +114,59 @@ def mainmenu():
     subtitle_pos = (TITLE_CENTER[0] - (subtitle_size[0] / 2),
                     TITLE_CENTER[1] + (title_size[1] / 2))
 
-    screen.blit(title_surface, title_pos)
-    screen.blit(subtitle_surface, subtitle_pos)
-    pygame.display.update()
+    title_surface.set_alpha(0)  # Start completely transparent to fade in
+    millisec_elapsed = 0
+    fade_time = 3000  # Milliseconds to go from transparent to opaque
+    blink_time = 1000  # milliseconds between each blink on subtitle
+    subtitle_alpha = 0  # Start blink as transparent
+    title_complete = False  # If the title has completed fading in
 
+    clock = pygame.time.Clock()
     while True:
         # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 state = GameState.QUIT
                 return
-            if event.type == pygame.KEYUP:  # Start game on keyup
+            elif event.type == pygame.KEYUP:  # Start game on keyup
                 state = GameState.PLAY
                 return
+
+        millisec = clock.tick(FPS_LIM)
+        millisec_elapsed += millisec
+        # Title still being faded in
+        if not title_complete:
+            new_alpha = (float(millisec_elapsed) /
+                         float(fade_time)) * 255
+            if new_alpha >= 255:
+                new_alpha = 255
+                title_complete = True
+                millisec_elapsed = 0  # Reset to avoid overflow
+            title_surface.set_alpha(new_alpha)
+        else:  # Title completed fade in, blink subtitle
+            if millisec_elapsed >= blink_time:
+                millisec_elapsed = 0
+                # Toggle between transparent and opaque
+                subtitle_alpha = 0 if subtitle_alpha > 0 else 255
+                subtitle_surface.set_alpha(subtitle_alpha)
+
+        dirty_rects = []
+
+        # Erase title
+        dirty_rects.append(screen.blit(background, title_pos,
+                                       pygame.Rect(title_pos, title_size)))
+        # Erase subtitle
+        if title_complete:
+            dirty_rects.append(screen.blit(background, subtitle_pos,
+                                           pygame.Rect(subtitle_pos, subtitle_size)))
+
+        # Draw title
+        dirty_rects.append(screen.blit(title_surface, title_pos))
+        # Draw subtitle
+        if title_complete:
+            dirty_rects.append(screen.blit(subtitle_surface, subtitle_pos))
+
+        pygame.display.update(dirty_rects)
 
 
 def pause():
@@ -204,13 +250,13 @@ def play():
                 background, ast.getupperleft(), ast.getbounds()))
 
         # Update entities
-        dt = clock.tick(60)
+        dt = clock.tick(FPS_LIM)
         speed = 1 / float(dt)
         ship.update(speed)
         for ast in asteroids:
             ast.update(speed)
         for i in range(len(bullets)-1, -1, -1):
-            if bullets[i].update(dt):
+            if bullets[i].update(speed):
                 bullets.remove(bullets[i])
 
         if running:  # running may be set to false in quit event
