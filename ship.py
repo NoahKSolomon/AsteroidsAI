@@ -6,6 +6,7 @@ vec2 = pygame.math.Vector2
 
 SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 700
+GOD_MODE = True
 
 
 class Ship:
@@ -16,7 +17,7 @@ class Ship:
     acc_mag = 25
     rot_vel = 75
     vel_lim = 100
-    shots_per_sec = 3
+    shots_per_sec = 10
 
     def __init__(self, surface, pos, dir=(1, 0)):
         """Create a Ship object
@@ -191,7 +192,7 @@ class Ship:
 
     def setDead(self, val):
         """Set the dead state of the Ship to 'val'"""
-        self.dead = val
+        self.dead = val if not GOD_MODE else False  # Godmode override
 
     def isDead(self):
         """Return if this Ship is dead"""
